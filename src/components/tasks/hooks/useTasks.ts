@@ -176,18 +176,7 @@ export const useTasks = () => {
             });
           }
 
-          // Send notification to admins
-          supabase.functions.invoke('send-task-completion-notification', {
-            body: {
-              task_id: taskId,
-              task_title: taskData.title,
-              staff_name: taskData.assigned_staff?.full_name,
-              event_title: taskData.event?.title,
-              new_status: status
-            }
-          }).catch(notifError => {
-            console.error('Error sending notification:', notifError);
-          });
+          // Task completion notification removed - WhatsApp integration cleaned up
 
         });
       
