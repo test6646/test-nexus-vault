@@ -1,0 +1,64 @@
+export const formatEventDateRange = (eventDate: string, totalDays: number = 1, eventEndDate?: string | null) => {
+  const startDate = new Date(eventDate);
+  
+  if (totalDays > 1) {
+    const endDate = eventEndDate ? 
+      new Date(eventEndDate) : 
+      new Date(startDate.getTime() + (totalDays - 1) * 24 * 60 * 60 * 1000);
+    return `${startDate.toLocaleDateString('en-GB')} - ${endDate.toLocaleDateString('en-GB')}`;
+  }
+  
+  return startDate.toLocaleDateString('en-GB');
+};
+
+export const getDateRangeForFinance = (timeRange: string) => {
+  const now = new Date();
+  let startDate: Date;
+  let isGlobal = false;
+
+  switch (timeRange) {
+    case 'week':
+      // Start of current week (Monday)
+      const dayOfWeek = now.getDay();
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - daysFromMonday);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'quarter':
+      const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+      startDate = new Date(now.getFullYear(), quarterStart, 1);
+      break;
+    case 'year':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    case 'global':
+      isGlobal = true;
+      startDate = new Date('2020-01-01');
+      break;
+    default:
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  return { startDate, isGlobal };
+};
+
+export const formatFinanceTimeRange = (timeRange: string) => {
+  switch (timeRange) {
+    case 'week':
+      return 'This Week';
+    case 'month':
+      return 'This Month';
+    case 'quarter':
+      return 'This Quarter';
+    case 'year':
+      return 'This Year';
+    case 'global':
+      return 'All Time';
+    default:
+      return 'This Month';
+  }
+};
