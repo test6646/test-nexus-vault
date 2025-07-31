@@ -27,7 +27,6 @@ const adminNavigationItems = [
   { name: 'Expenses', href: '/expenses', icon: DollarCircleIcon, roles: ['Admin'] },
   { name: 'Finance', href: '/finance', icon: ChartIcon, roles: ['Admin'] },
   { name: 'Sheets', href: '/sheet', icon: TableIcon, roles: ['Admin'] },
-  { name: 'WhatsApp', href: '/whatsapp', icon: QrCodeIcon, roles: ['Admin'] },
 ];
 
 const staffNavigationItems = [

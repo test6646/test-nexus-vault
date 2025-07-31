@@ -19,7 +19,6 @@ import Finance from './pages/Finance';
 import Quotations from './pages/Quotations';
 import EventSheet from './pages/EventSheet';
 import Profile from './pages/Profile';
-import WhatsApp from './pages/WhatsApp';
 
 import NotFound from './pages/NotFound';
 
@@ -102,11 +101,6 @@ function App() {
             <Route path="/sheet" element={
               <ProtectedRoute adminOnly>
                 <EventSheet />
-              </ProtectedRoute>
-             } />
-             <Route path="/whatsapp" element={
-              <ProtectedRoute adminOnly>
-                <WhatsApp />
               </ProtectedRoute>
              } />
              

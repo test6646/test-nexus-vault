@@ -780,42 +780,6 @@ export type Database = {
           },
         ]
       }
-      whatsapp_sessions: {
-        Row: {
-          connected_at: string | null
-          created_at: string
-          firm_id: string
-          id: string
-          last_ping: string | null
-          qr_code: string | null
-          session_id: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          connected_at?: string | null
-          created_at?: string
-          firm_id: string
-          id?: string
-          last_ping?: string | null
-          qr_code?: string | null
-          session_id: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          connected_at?: string | null
-          created_at?: string
-          firm_id?: string
-          id?: string
-          last_ping?: string | null
-          qr_code?: string | null
-          session_id?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
