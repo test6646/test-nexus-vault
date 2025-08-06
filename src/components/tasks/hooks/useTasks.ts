@@ -1,0 +1,219 @@
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Task, Event, TaskStatus } from '@/types/studio';
+
+interface StaffMember {
+  id: string;
+  full_name: string;
+  role: string;
+  mobile_number: string;
+}
+
+export const useTasks = () => {
+  const { profile, user } = useAuth(); // ✅ Get user from auth
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const isAdmin = profile?.role === 'Admin';
+  const currentFirmId = profile?.current_firm_id;
+
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('tasks')
+        .select(`
+          *,
+          event:events(id, title, client:clients(name)),
+          assigned_staff:profiles!tasks_assigned_to_fkey(id, full_name, role)
+        `);
+
+      if (isAdmin && currentFirmId) {
+        // Admin sees all tasks for their current firm
+        query = query.eq('firm_id', currentFirmId);
+      } else if (profile?.id) {
+        // Non-admin users only see tasks assigned to their profile ID
+        query = query.eq('assigned_to', profile.id);
+      } else {
+        // No profile, return empty
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+
+      query = query.order('due_date', { ascending: true });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setTasks(data as any || []);
+    } catch (error: any) {
+      console.error('Error loading tasks:', error);
+      toast({
+        title: "Error loading tasks",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadEvents = async () => {
+    if (!currentFirmId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, title')
+        .eq('firm_id', currentFirmId)
+        .order('event_date', { ascending: false });
+
+      if (error) throw error;
+      setEvents(data as any || []);
+    } catch (error: any) {
+      console.error('Error loading events:', error);
+    }
+  };
+
+  const loadStaffMembers = async () => {
+    if (!currentFirmId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, role, mobile_number')
+        .eq('current_firm_id', currentFirmId)
+        .order('full_name');
+
+      if (error) throw error;
+      setStaffMembers(data as any || []);
+    } catch (error: any) {
+      console.error('Error loading staff members:', error);
+    }
+  };
+
+  const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
+    try {
+      // OPTIMISTIC UPDATE: Update UI immediately
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId 
+            ? { ...task, status, completed_at: status === 'Completed' ? new Date().toISOString() : task.completed_at }
+            : task
+        )
+      );
+
+      toast({
+        title: "Task status updated",
+        description: `Task marked as ${status.toLowerCase()}`,
+      });
+
+      // Background operations
+      const updates: any = { status, updated_at: new Date().toISOString() };
+      if (status === 'Completed') {
+        updates.completed_at = new Date().toISOString();
+      }
+
+      // Start database update in background
+      const { error } = await supabase
+        .from('tasks')
+        .update(updates)
+        .eq('id', taskId);
+
+      if (error) {
+        // Revert optimistic update on error
+        loadTasks();
+        throw error;
+      }
+
+      // ✅ IMMEDIATE GOOGLE SHEETS SYNC - Critical for real-time updates
+      if (currentFirmId) {
+        try {
+          const { error: syncError } = await supabase.functions.invoke('sync-single-item-to-google', {
+            body: {
+              itemType: 'task',
+              itemId: taskId,
+              firmId: currentFirmId
+            }
+          });
+          
+          if (syncError) {
+            console.error('❌ Google Sheets sync failed:', syncError);
+          } else {
+            // Task synced to Google Sheets
+          }
+        } catch (syncError) {
+          console.error('❌ Failed to sync task status to Google Sheets:', syncError);
+        }
+      }
+
+      // Background operations - don't await to keep UI responsive
+      supabase
+        .from('tasks')
+        .select(`
+          *,
+          event:events(title),
+          assigned_staff:profiles!tasks_assigned_to_fkey(full_name, mobile_number)
+        `)
+        .eq('id', taskId)
+        .single()
+        .then(({ data: taskData }) => {
+          if (!taskData) return;
+
+          // ✅ CRITICAL: Update event editing status when photo/video task is completed
+          if ((taskData.task_type === 'Photo Editing' || taskData.task_type === 'Video Editing') && status === 'Completed' && taskData.event_id) {
+            supabase.functions.invoke('update-event-editing-status', {
+              body: {
+                eventId: taskData.event_id,
+                taskType: taskData.task_type,
+                isCompleted: true
+              }
+            }).catch(editingError => {
+              console.error('Error updating event editing status:', editingError);
+            });
+          }
+
+          
+
+        });
+      
+    } catch (error: any) {
+      console.error('Error updating task status:', error);
+      toast({
+        title: "Error updating task status",
+        description: error.message,
+        variant: "destructive",
+      });
+      // Revert optimistic update
+      loadTasks();
+    }
+  };
+
+  useEffect(() => {
+    // Only load tasks when we have user data
+    if (user && profile) {
+      loadTasks();
+      if (isAdmin && currentFirmId) {
+        loadEvents();
+        loadStaffMembers();
+      }
+    }
+  }, [user, profile, isAdmin, currentFirmId]); // ✅ Depend on user, not just profile
+
+  return {
+    tasks,
+    events,
+    staffMembers,
+    loading,
+    isAdmin,
+    loadTasks,
+    updateTaskStatus
+  };
+};

@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Photography Studio Design System - Professional Color Palette */
+
+@layer base {
+  :root {
+    /* Studio Brand Colors - Based on #c4b28d */
+    --studio-primary: #c4b28d;
+    --studio-primary-dark: #b8a67c;
+    --studio-primary-light: #d0c499;
+    --studio-accent: #e8dcc0;
+    --studio-warm: #f7f4ed;
+    --studio-neutral: #6b7280;
+    --studio-dark: #374151;
+    
+    /* UI Colors - HSL Format for Professional Photography Studio */
+    --background: 44 35% 97%;
+    --foreground: 220 13% 18%;
+    --card: 44 25% 99%;
+    --card-foreground: 220 13% 18%;
+    --popover: 44 25% 99%;
+    --popover-foreground: 220 13% 18%;
+    --primary: 37 28% 65%;
+    --primary-foreground: 44 35% 15%;
+    --secondary: 37 20% 92%;
+    --secondary-foreground: 220 13% 18%;
+    --muted: 37 15% 95%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 37 25% 90%;
+    --accent-foreground: 37 28% 25%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 37 20% 85%;
+    --input: 37 20% 85%;
+    --ring: 37 28% 65%;
+    --radius: 8px;
+    
+    /* Studio-specific semantic colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 98%;
+    
+    /* Sidebar colors for professional look */
+    --sidebar-background: 37 25% 97%;
+    --sidebar-foreground: 220 13% 18%;
+    --sidebar-primary: 37 28% 65%;
+    --sidebar-primary-foreground: 44 35% 15%;
+    --sidebar-accent: 37 20% 90%;
+    --sidebar-accent-foreground: 220 13% 18%;
+    --sidebar-border: 37 20% 82%;
+    --sidebar-ring: 37 28% 65%;
+    
+    /* Event type colors - perfect middle range */
+    --wedding-color: 350 85% 60%;        /* Rose 400 equivalent */
+    --wedding-border: 350 85% 60%;
+    --pre-wedding-color: 280 75% 65%;    /* Purple 400 equivalent */  
+    --pre-wedding-border: 280 75% 65%;
+    --ring-ceremony-color: 210 85% 60%;  /* Blue 400 equivalent */
+    --ring-ceremony-border: 210 85% 60%;
+    --maternity-color: 45 95% 60%;       /* Yellow 400 equivalent */
+    --maternity-border: 45 95% 60%;
+    --others-color: 220 15% 50%;         /* Gray 400 equivalent */
+    --others-border: 220 15% 50%;
+    
+    /* Advanced color system for studio features */
+    --gradient-primary: linear-gradient(135deg, hsl(37, 28%, 65%), hsl(37, 35%, 72%));
+    --gradient-accent: linear-gradient(135deg, hsl(37, 25%, 90%), hsl(44, 35%, 95%));
+    --shadow-soft: 0 2px 8px -2px hsl(37, 28%, 65%, 0.1);
+    --shadow-medium: 0 4px 16px -4px hsl(37, 28%, 65%, 0.15);
+    --shadow-strong: 0 8px 32px -8px hsl(37, 28%, 65%, 0.2);
+  }
+
+  [data-theme="dark"] {
+    /* Studio Dark Theme */
+    --background: 220 13% 9%;
+    --foreground: 44 35% 92%;
+    --card: 220 13% 12%;
+    --card-foreground: 44 35% 92%;
+    --popover: 220 13% 12%;
+    --popover-foreground: 44 35% 92%;
+    --primary: 37 28% 55%;
+    --primary-foreground: 220 13% 9%;
+    --secondary: 220 13% 15%;
+    --secondary-foreground: 44 35% 92%;
+    --muted: 220 13% 15%;
+    --muted-foreground: 44 20% 65%;
+    --accent: 220 13% 18%;
+    --accent-foreground: 44 35% 92%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 37 28% 55%;
+    
+    /* Dark theme studio colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 98%;
+    
+    --sidebar-background: 220 13% 8%;
+    --sidebar-foreground: 44 35% 88%;
+    --sidebar-primary: 37 28% 55%;
+    --sidebar-primary-foreground: 220 13% 9%;
+    --sidebar-accent: 220 13% 15%;
+    --sidebar-accent-foreground: 44 35% 88%;
+    --sidebar-border: 220 13% 18%;
+    --sidebar-ring: 37 28% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-lexend;
+  }
+
+  /* Ensure Lexend font is applied to all forms and inputs */
+  input, textarea, select, button, .font-inherit {
+    font-family: 'Lexend', 'ui-sans-serif', 'system-ui', sans-serif !important;
+    text-align: left;
+  }
+
+  /* Apply Lexend to all text elements with left alignment */
+  * {
+    font-family: 'Lexend', 'ui-sans-serif', 'system-ui', sans-serif;
+  }
+
+  /* Ensure placeholders are left-aligned */
+  input::placeholder, textarea::placeholder {
+    text-align: left;
+  }
+
+}
