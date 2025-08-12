@@ -39,6 +39,13 @@ interface IndividualEventReportProps {
       reference_number?: string;
     }>;
   };
+  firmData?: {
+    name: string;
+    description?: string;
+    logo_url?: string;
+    header_left_content?: string;
+    footer_content?: string;
+  };
 }
 
 const styles = StyleSheet.create({
@@ -298,7 +305,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const IndividualEventReportDocument = ({ event }: IndividualEventReportProps) => {
+const IndividualEventReportDocument = ({ event, firmData }: IndividualEventReportProps) => {
   const totalDays = (event as any).total_days || 1;
   const totalAmount = event.total_amount || 0;
   const paidAmount = event.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
@@ -356,7 +363,7 @@ const IndividualEventReportDocument = ({ event }: IndividualEventReportProps) =>
     <Document>
       {/* Page 1: Event Information & Financial Summary */}
       <Page size="A4" style={styles.page}>
-        <SharedPDFHeader />
+        <SharedPDFHeader firmData={firmData} />
 
         <Text style={styles.title}>Event Report</Text>
         <Text style={styles.subtitle}>{event.title}</Text>
@@ -515,7 +522,7 @@ const IndividualEventReportDocument = ({ event }: IndividualEventReportProps) =>
           </View>
         )}
         
-        {!hasTasks && <SharedPDFFooter />}
+        {!hasTasks && <SharedPDFFooter firmData={firmData} />}
       </Page>
 
       {/* Page 3: Tasks - Only show if tasks exist */}
@@ -576,17 +583,17 @@ const IndividualEventReportDocument = ({ event }: IndividualEventReportProps) =>
             ))}
           </View>
 
-          <SharedPDFFooter />
+          <SharedPDFFooter firmData={firmData} />
         </Page>
       )}
     </Document>
   );
 };
 
-export const IndividualEventReportButton = ({ event }: IndividualEventReportProps) => {
+export const IndividualEventReportButton = ({ event, firmData }: IndividualEventReportProps) => {
   return (
     <PDFDownloadLink
-      document={<IndividualEventReportDocument event={event} />}
+      document={<IndividualEventReportDocument event={event} firmData={firmData} />}
       fileName={`event-report-${event.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`}
     >
       {({ loading }) => (
@@ -604,9 +611,9 @@ export const IndividualEventReportButton = ({ event }: IndividualEventReportProp
   );
 };
 
-export const generateIndividualEventReport = async (event: IndividualEventReportProps['event']) => {
+export const generateIndividualEventReport = async (event: IndividualEventReportProps['event'], firmData?: IndividualEventReportProps['firmData']) => {
   try {
-    const blob = await pdf(<IndividualEventReportDocument event={event} />).toBlob();
+    const blob = await pdf(<IndividualEventReportDocument event={event} firmData={firmData} />).toBlob();
     
     const fileName = `event-report-${event.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
     

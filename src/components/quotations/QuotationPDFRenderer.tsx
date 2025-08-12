@@ -406,7 +406,7 @@ const QuotationPDFDocument: React.FC<QuotationPDFProps> = ({ quotation, firmData
 
       {/* Page 2: Terms and Conditions */}
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header - with firm data */}
         <SharedPDFHeader firmData={firmData} />
 
         {/* Terms and Conditions */}

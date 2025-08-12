@@ -99,7 +99,7 @@ const TopNavbar = ({ children }: TopNavbarProps) => {
               onClick={() => navigate(profile?.role === 'Admin' ? '/events' : '/dashboard')}
             >
               <img 
-                src="https://res.cloudinary.com/dmo0bmu3c/image/upload/v1749984661/events/importants/header/prit-logo.png"
+                src="/prit-logo.png"
                 alt="PRIT PHOTO Logo"
                 className="h-10 sm:h-12 w-auto object-contain transition-opacity duration-200 hover:opacity-80"
                 onError={(e) => {
