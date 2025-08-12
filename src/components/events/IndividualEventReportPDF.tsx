@@ -4,6 +4,7 @@ import { Download01Icon } from 'hugeicons-react';
 import { Event } from '@/types/studio';
 import { formatEventDateRange } from '@/lib/date-utils';
 import { sharedStyles, SharedPDFHeader, SharedPDFFooter } from '@/components/pdf/SharedPDFLayout';
+import { supabase } from '@/integrations/supabase/client';
 
 // Register Lexend font from local file
 Font.register({
@@ -590,10 +591,10 @@ const IndividualEventReportDocument = ({ event, firmData }: IndividualEventRepor
   );
 };
 
-export const IndividualEventReportButton = ({ event, firmData }: IndividualEventReportProps) => {
+export const IndividualEventReportButton = ({ event }: { event: IndividualEventReportProps['event'] }) => {
   return (
     <PDFDownloadLink
-      document={<IndividualEventReportDocument event={event} firmData={firmData} />}
+      document={<IndividualEventReportDocument event={event} />}
       fileName={`event-report-${event.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`}
     >
       {({ loading }) => (
@@ -611,8 +612,33 @@ export const IndividualEventReportButton = ({ event, firmData }: IndividualEvent
   );
 };
 
-export const generateIndividualEventReport = async (event: IndividualEventReportProps['event'], firmData?: IndividualEventReportProps['firmData']) => {
+export const generateIndividualEventReport = async (event: IndividualEventReportProps['event']) => {
   try {
+    // Get current user's firm data
+    let firmData = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('current_firm_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile?.current_firm_id) {
+          const { data: firm } = await supabase
+            .from('firms')
+            .select('name, description, logo_url, header_left_content, footer_content')
+            .eq('id', profile.current_firm_id)
+            .single();
+          
+          firmData = firm;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching firm data for PDF:', error);
+    }
+
     const blob = await pdf(<IndividualEventReportDocument event={event} firmData={firmData} />).toBlob();
     
     const fileName = `event-report-${event.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;

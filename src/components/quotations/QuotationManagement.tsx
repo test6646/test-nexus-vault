@@ -16,6 +16,8 @@ import QuotationFormDialog from './QuotationFormDialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import QuotationStats from './QuotationStats';
 import { useFirmData } from '@/hooks/useFirmData';
+import UniversalExportDialog from '@/components/common/UniversalExportDialog';
+import { useQuotationExportConfig } from './QuotationExportConfig';
 
 interface QuotationFormData {
   title: string;
@@ -31,6 +33,7 @@ const QuotationManagement = () => {
   const { profile, currentFirmId } = useAuth();
   const { quotations, clients, loading, loadQuotations } = useQuotations();
   const { firmData } = useFirmData();
+  const quotationExportConfig = useQuotationExportConfig();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
@@ -164,13 +167,21 @@ const QuotationManagement = () => {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Quotations</h1>
-        <QuotationFormDialog
-          clients={clients}
-          isOpen={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          onSubmit={handleSubmit}
-          onNewQuotation={handleNewQuotation}
-        />
+        <div className="flex items-center gap-2">
+          {quotationsToShow.length > 0 && (
+            <UniversalExportDialog 
+              data={quotationsToShow}
+              config={quotationExportConfig}
+            />
+          )}
+          <QuotationFormDialog
+            clients={clients}
+            isOpen={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            onSubmit={handleSubmit}
+            onNewQuotation={handleNewQuotation}
+          />
+        </div>
       </div>
 
       <QuotationStats quotations={quotations} />

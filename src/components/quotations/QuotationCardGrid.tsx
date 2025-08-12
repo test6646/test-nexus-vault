@@ -48,7 +48,7 @@ const QuotationCardGrid = ({ quotation, onUpdate, onEdit, firmData }: QuotationC
 
   const generatePDF = async () => {
     try {
-      const result = await downloadQuotationPDF(quotation, firmData);
+      const result = await downloadQuotationPDF(quotation);
       if (result.success) {
         toast({
           title: "PDF Downloaded!",
@@ -84,7 +84,7 @@ const QuotationCardGrid = ({ quotation, onUpdate, onEdit, firmData }: QuotationC
     }
 
     try {
-      const result = await shareQuotationDetails(selectedQuotationForShare, firmData, 'direct');
+      const result = await shareQuotationDetails(selectedQuotationForShare, 'direct');
       if (result.success) {
         toast({
           title: "Sent to Client!",
@@ -111,7 +111,7 @@ const QuotationCardGrid = ({ quotation, onUpdate, onEdit, firmData }: QuotationC
     if (!selectedQuotationForShare) return;
     
     try {
-      const result = await shareQuotationDetails(selectedQuotationForShare, firmData, 'custom');
+      const result = await shareQuotationDetails(selectedQuotationForShare, 'custom');
       if (result.success) {
         let title = "Shared Successfully!";
         let description = "Quotation shared successfully";

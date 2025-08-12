@@ -4,6 +4,7 @@ import { saveAs } from 'file-saver';
 import { shareTextWithFile } from '@/lib/share-utils';
 import { SharedPDFHeader, SharedPDFFooter, sharedStyles, SimpleTable } from '../pdf/SharedPDFLayout';
 import { formatDate } from '@/lib/date-utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const styles = StyleSheet.create({
   ...sharedStyles,
@@ -429,11 +430,39 @@ const QuotationPDFDocument: React.FC<QuotationPDFProps> = ({ quotation, firmData
   );
 };
 
-export const generateQuotationPDF = async (quotation: any, firmData?: any) => {
+export const generateQuotationPDF = async (quotation: any) => {
   try {
+    // Get current user's firm data
+    let firmData = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('current_firm_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile?.current_firm_id) {
+          const { data: firm } = await supabase
+            .from('firms')
+            .select('name, description, logo_url, header_left_content, footer_content')
+            .eq('id', profile.current_firm_id)
+            .single();
+          
+          firmData = firm;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching firm data for PDF:', error);
+    }
+
     const doc = <QuotationPDFDocument quotation={quotation} firmData={firmData} />;
     const asPdf = pdf(doc);
     const blob = await asPdf.toBlob();
+    
+    const fileName = `Quotation-${quotation.title.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+    saveAs(blob, fileName);
     return { success: true, blob };
   } catch (error) {
     console.error('Error generating PDF:', error);
@@ -441,9 +470,9 @@ export const generateQuotationPDF = async (quotation: any, firmData?: any) => {
   }
 };
 
-export const shareQuotationDetails = async (quotation: any, firmData?: any, shareType: 'direct' | 'custom' = 'custom') => {
+export const shareQuotationDetails = async (quotation: any, shareType: 'direct' | 'custom' = 'custom') => {
   try {
-    const result = await generateQuotationPDF(quotation, firmData);
+    const result = await generateQuotationPDF(quotation);
     if (!result.success || !result.blob) {
       throw new Error('PDF generation failed');
     }
@@ -461,8 +490,7 @@ export const shareQuotationDetails = async (quotation: any, firmData?: any, shar
         eventType: quotation.event_type,
         documentType: 'quotation',
         file: file,
-        firmId: quotation.firm_id,
-        firmData
+        firmId: quotation.firm_id
       });
     } else {
       // Custom share - use existing share functionality  
@@ -471,12 +499,11 @@ export const shareQuotationDetails = async (quotation: any, firmData?: any, shar
 Client: ${quotation.client?.name || 'N/A'}
 Event Type: ${quotation.event_type}
 Event Date: ${new Date(quotation.event_date).toLocaleDateString()}
-${quotation.venue ? `Venue: ${quotation.venue}\n` : ''}Total Amount: Rs.${(quotation.amount || 0).toLocaleString()}
-${quotation.discount_amount ? `Discount: Rs.${quotation.discount_amount.toLocaleString()}\n` : ''}${quotation.valid_until ? `Valid Until: ${new Date(quotation.valid_until).toLocaleDateString()}\n` : ''}
+${quotation.venue ? `Venue: ${quotation.venue}\n` : ''}Amount: ₹${(quotation.amount || 0).toLocaleString()}
+${quotation.discount_amount ? `Discount: ₹${quotation.discount_amount.toLocaleString()}\n` : ''}Valid Until: ${quotation.valid_until ? new Date(quotation.valid_until).toLocaleDateString() : 'Contact us'}
+
 ---
-${firmData?.name || 'PRIT PHOTO'}
-${firmData?.description || 'Professional Photography & Videography Services'}
-${firmData?.header_left_content || 'Contact: +91 72850 72603'}
+Professional Photography & Videography Services
 
 Quotation PDF is attached for your reference.`;
 

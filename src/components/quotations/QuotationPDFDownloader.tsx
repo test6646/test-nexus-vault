@@ -1,9 +1,9 @@
 import { generateQuotationPDF } from './QuotationPDFRenderer';
 import { saveAs } from 'file-saver';
 
-export const downloadQuotationPDF = async (quotation: any, firmData?: any) => {
+export const downloadQuotationPDF = async (quotation: any) => {
   try {
-    const result = await generateQuotationPDF(quotation, firmData);
+    const result = await generateQuotationPDF(quotation);
     if (result.success) {
       const fileName = `Quotation-${quotation.title.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
       saveAs(result.blob, fileName);
