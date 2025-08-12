@@ -193,8 +193,8 @@ const FinanceReportDocument: React.FC<FinanceReportProps> = ({ stats, timeRange,
 
   const netProfit = (stats?.paymentIn || 0) - (stats?.totalExpenses || 0);
   
-  // Use firm logo or fallback to default
-  const logoSrc = firmData?.logo_url || "https://res.cloudinary.com/dmo0bmu3c/image/upload/v1754559153/Untitled_design_11zon_eoqtzk.png";
+  // Use firm's real logo only
+  const logoSrc = firmData?.logo_url;
   const firmName = firmData?.name || "PRIT PHOTO";
   const firmDescription = firmData?.description || "Professional Photography & Videography Services";
 
@@ -203,13 +203,15 @@ const FinanceReportDocument: React.FC<FinanceReportProps> = ({ stats, timeRange,
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Image 
-            src={logoSrc}
-            style={{ 
-              width: 120, 
-              objectFit: 'contain'
-            }}
-          />
+          {logoSrc && (
+            <Image 
+              src={logoSrc}
+              style={{ 
+                width: 120, 
+                objectFit: 'contain'
+              }}
+            />
+          )}
           <View style={styles.companyInfo}>
             <Text style={styles.companyName}>{firmName.toUpperCase()}</Text>
             {firmData?.header_left_content?.split('\n').map((line, index) => (
@@ -259,13 +261,15 @@ const FinanceReportDocument: React.FC<FinanceReportProps> = ({ stats, timeRange,
       {/* Financial Summary on Separate Page */}
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Image 
-            src={logoSrc}
-            style={{ 
-              width: 120, 
-              objectFit: 'contain'
-            }}
-          />
+          {logoSrc && (
+            <Image 
+              src={logoSrc}
+              style={{ 
+                width: 120, 
+                objectFit: 'contain'
+              }}
+            />
+          )}
           <View style={styles.companyInfo}>
             <Text style={styles.companyName}>{firmName.toUpperCase()}</Text>
             {firmData?.header_left_content?.split('\n').map((line, index) => (

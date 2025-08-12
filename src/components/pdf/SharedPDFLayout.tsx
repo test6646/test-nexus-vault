@@ -259,22 +259,25 @@ interface SharedPDFHeaderProps {
 }
 
 export const SharedPDFHeader: React.FC<SharedPDFHeaderProps> = ({ children, firmData }) => {
-  const logoUrl = firmData?.logo_url || "https://res.cloudinary.com/dmo0bmu3c/image/upload/v1754559153/Untitled_design_11zon_eoqtzk.png";
+  // Always use firm's logo, no fallback to hardcoded URL
+  const logoUrl = firmData?.logo_url;
   const firmName = firmData?.name || 'PRIT PHOTO';
   const headerContent = firmData?.header_left_content || 'Contact: +91 72850 72603\nEmail: pritphoto1985@gmail.com';
   const firmDescription = firmData?.description || '#aJourneyOfLoveByPritPhoto';
 
   return (
     <View style={sharedStyles.header}>
-      <View style={sharedStyles.logoSection}>
-        <Image 
-          src={logoUrl}
-          style={{ 
-            width: 120, 
-            objectFit: 'contain'
-          }}
-        />
-      </View>
+      {logoUrl && (
+        <View style={sharedStyles.logoSection}>
+          <Image 
+            src={logoUrl}
+            style={{ 
+              width: 120, 
+              objectFit: 'contain'
+            }}
+          />
+        </View>
+      )}
       
       <View style={sharedStyles.contactSection}>
         <Text style={sharedStyles.contactText}>{firmName}</Text>
