@@ -91,6 +91,10 @@ export const useStaffAssignments = (
     
     console.log('Final quotation details being used:', quotationDetails);
     
+    // Determine if this is a manual event (no quotation)
+    const isManualEvent = !quotationDetails?.days;
+    console.log(`Event type: ${isManualEvent ? 'MANUAL' : 'QUOTATION-BASED'}`);
+    
     // STEP 2: Group existing assignments by day and role
     const groupedByDay = new Map();
     
@@ -124,7 +128,7 @@ export const useStaffAssignments = (
       }
     });
     
-    // STEP 3: Generate correct slots using EXACT same logic as EventCrewDialog
+    // STEP 3: Generate correct slots for each day
     const totalDays = eventData?.total_days || (currentEvent as any)?.total_days || 1;
     const processedAssignments = [];
     
@@ -137,14 +141,18 @@ export const useStaffAssignments = (
         drone_pilot_id: ''
       };
       
-      // CRITICAL: Use the EXACT same slot generation logic as EventCrewDialog
+      // Get quotation requirements for this day
       const requiredPhotographers = getRequiredCrewCount('Photographer', day, quotationDetails);
       const requiredCinematographers = getRequiredCrewCount('Cinematographer', day, quotationDetails);
       const requiredDrone = getRequiredCrewCount('Drone Pilot', day, quotationDetails);
       
-      console.log(`Day ${day} requirements from quotation: P=${requiredPhotographers}, C=${requiredCinematographers}, D=${requiredDrone}`);
+      console.log(`Day ${day} requirements - P:${requiredPhotographers}, C:${requiredCinematographers}, D:${requiredDrone}, Manual:${isManualEvent}`);
       
-      // Generate the correct number of slots based on quotation requirements
+      // Get existing assignments
+      const existingPhotographers = existingDayData.photographer_ids || [];
+      const existingCinematographers = existingDayData.cinematographer_ids || [];
+      
+      // Generate final day data
       const finalDayData = {
         day,
         photographer_ids: [],
@@ -153,64 +161,62 @@ export const useStaffAssignments = (
         drone_pilot_id: existingDayData.drone_pilot_id || ''
       };
       
-      // CRITICAL FIX: ALWAYS ensure ALL crew types have at least 1 slot for ALL events
-      console.log(`Day ${day}: Ensuring ALL crew types have slots (quotation: ${!!quotationDetails?.days?.[day - 1]})`);
-      
-      // Get existing assignments
-      const existingPhotographers = existingDayData.photographer_ids || [];
-      const existingCinematographers = existingDayData.cinematographer_ids || [];
-      
-      // CRITICAL FIX: For ALL events, ensure EVERY crew type has at least 1 slot
-      // Manual events: ALWAYS show ALL crew types with at least 1 slot
-      // Quotation events: Use quotation requirements OR minimum 1 slot if existing assignments
-      
-      // PHOTOGRAPHERS: ALWAYS ensure at least 1 slot for ALL events
-      if (quotationDetails?.days?.[day - 1]) {
-        // Quotation-based: Use quotation requirements but ensure minimum 1 slot if any assignments exist
-        const neededSlots = requiredPhotographers > 0 ? requiredPhotographers : (existingPhotographers.length > 0 ? Math.max(1, existingPhotographers.length) : 1);
-        finalDayData.photographer_ids = Array(neededSlots).fill('').map((_, i) => 
+      if (isManualEvent) {
+        // MANUAL EVENTS: ALWAYS show at least 1 slot for EVERY crew type
+        console.log(`Manual event - ensuring ALL crew types have minimum 1 slot`);
+        
+        // Photographers: At least 1 slot, more if there are existing assignments
+        const photographerSlots = Math.max(1, existingPhotographers.length || 1);
+        finalDayData.photographer_ids = Array(photographerSlots).fill('').map((_, i) => 
           existingPhotographers[i] || ''
         );
-      } else {
-        // Manual event: ALWAYS show at least 1 photographer slot 
-        const neededSlots = Math.max(1, existingPhotographers.length || 1);
-        finalDayData.photographer_ids = Array(neededSlots).fill('').map((_, i) => 
-          existingPhotographers[i] || ''
-        );
-      }
-      
-      // CINEMATOGRAPHERS: ALWAYS ensure at least 1 slot for ALL events
-      if (quotationDetails?.days?.[day - 1]) {
-        // Quotation-based: Use quotation requirements but ensure minimum 1 slot if any assignments exist
-        const neededSlots = requiredCinematographers > 0 ? requiredCinematographers : (existingCinematographers.length > 0 ? Math.max(1, existingCinematographers.length) : 1);
-        finalDayData.cinematographer_ids = Array(neededSlots).fill('').map((_, i) => 
+        
+        // Cinematographers: At least 1 slot, more if there are existing assignments
+        const cinematographerSlots = Math.max(1, existingCinematographers.length || 1);
+        finalDayData.cinematographer_ids = Array(cinematographerSlots).fill('').map((_, i) => 
           existingCinematographers[i] || ''
         );
-      } else {
-        // Manual event: ALWAYS show at least 1 cinematographer slot
-        const neededSlots = Math.max(1, existingCinematographers.length || 1);
-        finalDayData.cinematographer_ids = Array(neededSlots).fill('').map((_, i) => 
-          existingCinematographers[i] || ''
-        );
-      }
-      
-      // EDITOR: ALWAYS show for ALL events (manual and quotation)
-      finalDayData.editor_id = existingDayData.editor_id || '';
-      
-      // DRONE PILOT: ALWAYS show for manual events, conditionally for quotation events
-      if (quotationDetails?.days?.[day - 1]) {
-        // Quotation-based: Show if required by quotation OR if manually assigned OR for consistency in manual-like behavior
+        
+        // Editor: Always show (single slot)
+        finalDayData.editor_id = existingDayData.editor_id || '';
+        
+        // Drone Pilot: Always show (single slot)
         finalDayData.drone_pilot_id = existingDayData.drone_pilot_id || '';
       } else {
-        // Manual event: ALWAYS show drone pilot slot
+        // QUOTATION-BASED EVENTS: Use quotation requirements
+        console.log(`Quotation event - using requirements: P:${requiredPhotographers}, C:${requiredCinematographers}, D:${requiredDrone}`);
+        
+        // Photographers: Use quotation requirement, but ensure at least 1 slot if any exist
+        const photographerSlots = requiredPhotographers > 0 ? requiredPhotographers : 
+          (existingPhotographers.length > 0 ? Math.max(1, existingPhotographers.length) : 1);
+        finalDayData.photographer_ids = Array(photographerSlots).fill('').map((_, i) => 
+          existingPhotographers[i] || ''
+        );
+        
+        // Cinematographers: Use quotation requirement, but ensure at least 1 slot if any exist
+        const cinematographerSlots = requiredCinematographers > 0 ? requiredCinematographers : 
+          (existingCinematographers.length > 0 ? Math.max(1, existingCinematographers.length) : 1);
+        finalDayData.cinematographer_ids = Array(cinematographerSlots).fill('').map((_, i) => 
+          existingCinematographers[i] || ''
+        );
+        
+        // Editor: Always show
+        finalDayData.editor_id = existingDayData.editor_id || '';
+        
+        // Drone Pilot: Show based on quotation requirement OR if manually assigned
         finalDayData.drone_pilot_id = existingDayData.drone_pilot_id || '';
       }
       
       processedAssignments.push(finalDayData);
-      console.log(`Day ${day} final assignment:`, finalDayData);
+      console.log(`Day ${day} final slots:`, {
+        photographers: finalDayData.photographer_ids.length,
+        cinematographers: finalDayData.cinematographer_ids.length,
+        editor: finalDayData.editor_id ? '1' : '0',
+        dronePilot: finalDayData.drone_pilot_id ? '1' : '0'
+      });
     }
     
-    console.log('Final processed staff assignments by day (EventCrewDialog approach):', processedAssignments);
+    console.log('Final processed staff assignments:', processedAssignments);
     setMultiDayAssignments(processedAssignments);
   };
 
