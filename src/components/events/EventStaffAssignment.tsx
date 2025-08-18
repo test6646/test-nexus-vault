@@ -95,12 +95,14 @@ const EventStaffAssignment: React.FC<EventStaffAssignmentProps> = ({
   };
 
   const shouldShowDronePilot = (dayIndex: number) => {
+    // CRITICAL FIX: ALWAYS show drone pilot for manual events
+    // Only apply quotation restrictions for quotation-based events
     const quotationDetails = selectedQuotation?.quotation_details;
-    if (quotationDetails?.days) {
+    if (quotationDetails?.days && selectedQuotation) {
       const dayConfig = quotationDetails.days[dayIndex];
       return dayConfig?.drone > 0;
     }
-    return !selectedQuotation; // Show if no quotation selected
+    return true; // ALWAYS show for manual events (no quotation selected)
   };
 
   return (
