@@ -1,0 +1,267 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Photography Studio Design System - Professional Color Palette */
+
+@layer base {
+  :root {
+    /* Studio Brand Colors - Based on #c4b28d */
+    --studio-primary: #c4b28d;
+    --studio-primary-dark: #b8a67c;
+    --studio-primary-light: #d0c499;
+    --studio-accent: #e8dcc0;
+    --studio-warm: #f7f4ed;
+    --studio-neutral: #6b7280;
+    --studio-dark: #374151;
+    
+    /* UI Colors - HSL Format for Professional Photography Studio */
+    --background: 44 35% 97%;
+    --foreground: 220 13% 18%;
+    --card: 44 25% 99%;
+    --card-foreground: 220 13% 18%;
+    --popover: 44 25% 99%;
+    --popover-foreground: 220 13% 18%;
+    --primary: 37 28% 65%;
+    --primary-foreground: 44 35% 15%;
+    --secondary: 37 20% 92%;
+    --secondary-foreground: 220 13% 18%;
+    --muted: 37 15% 95%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 37 25% 90%;
+    --accent-foreground: 37 28% 25%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 37 20% 85%;
+    --input: 37 20% 85%;
+    --ring: 37 28% 65%;
+    --radius: 8px;
+    
+    /* Studio-specific semantic colors - Professional Status System */
+    --success: 142 69% 58%;
+    --success-foreground: 0 0% 98%;
+    --success-subtle: 142 50% 95%;
+    --success-border: 142 60% 85%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    --warning-subtle: 38 54% 94%;
+    --warning-border: 38 70% 82%;
+    
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 98%;
+    --info-subtle: 217 50% 95%;
+    --info-border: 217 60% 85%;
+    
+    --error: 0 84% 60%;
+    --error-foreground: 0 0% 98%;
+    --error-subtle: 0 50% 96%;
+    --error-border: 0 60% 88%;
+    
+    /* Professional Status Colors - Consistent Pastel System */
+    --status-completed: 142 45% 45%;
+    --status-completed-bg: 142 35% 94%;
+    --status-completed-border: 142 40% 85%;
+    
+    --status-active: 217 55% 50%;
+    --status-active-bg: 217 35% 94%;
+    --status-active-border: 217 40% 85%;
+    
+    --status-pending: 38 60% 50%;
+    --status-pending-bg: 38 35% 94%;
+    --status-pending-border: 38 45% 82%;
+    
+    --status-cancelled: 0 55% 55%;
+    --status-cancelled-bg: 0 35% 95%;
+    --status-cancelled-border: 0 40% 88%;
+    
+    --status-draft: 220 25% 55%;
+    --status-draft-bg: 220 20% 95%;
+    --status-draft-border: 220 30% 85%;
+    
+    --status-expired: 0 55% 55%;
+    --status-expired-bg: 0 35% 95%;
+    --status-expired-border: 0 40% 88%;
+    
+    --status-in-progress: 262 50% 50%;
+    --status-in-progress-bg: 262 35% 94%;
+    --status-in-progress-border: 262 40% 85%;
+    
+    --status-confirmed: 142 45% 45%;
+    --status-confirmed-bg: 142 35% 94%;
+    --status-confirmed-border: 142 40% 85%;
+    
+    /* Role & Category Colors - User Specified Exact Colors */
+    --role-photographer: 219 79% 60%;        /* #2563EB */
+    --role-photographer-bg: 219 79% 95%;
+    
+    --role-cinematographer: 262 84% 60%;     /* #9333EA */
+    --role-cinematographer-bg: 262 84% 95%;
+    
+    --role-drone-pilot: 176 68% 52%;         /* #0D9488 */
+    --role-drone-pilot-bg: 176 68% 95%;
+    
+    --role-editor: 32 95% 44%;               /* #D97706 */
+    --role-editor-bg: 32 95% 95%;
+    
+    --role-others: 220 13% 46%;              /* #4B5563 */
+    --role-others-bg: 220 13% 95%;
+    
+    /* Expense Category Colors - Consistent Color System */
+    --category-equipment: 0 73% 55%;         /* #DC2626 */
+    --category-equipment-bg: 0 73% 95%;
+    
+    --category-travel: 122 48% 45%;          /* #16A34A */
+    --category-travel-bg: 122 48% 95%;
+    
+    --category-accommodation: 238 84% 60%;   /* #4F46E5 */
+    --category-accommodation-bg: 238 84% 95%;
+    
+    --category-food: 327 73% 65%;            /* #DB2777 */
+    --category-food-bg: 327 73% 95%;
+    
+    --category-marketing: 20 91% 55%;        /* #EA580C */
+    --category-marketing-bg: 20 91% 95%;
+    
+    --category-software: 194 93% 35%;        /* #0891B2 */
+    --category-software-bg: 194 93% 95%;
+    
+    --category-maintenance: 84 81% 45%;      /* #65A30D */
+    --category-maintenance-bg: 84 81% 95%;
+    
+    --category-salary: 292 84% 55%;          /* #C026D3 */
+    --category-salary-bg: 292 84% 95%;
+    
+    --category-other: 220 15% 45%;           /* #6B7280 */
+    --category-other-bg: 220 15% 95%;
+
+    --role-videographer: 262 84% 60%;        /* #9333EA converted to HSL */
+    --role-videographer-bg: 262 84% 95%;
+
+    --role-cinematographer: 262 84% 60%;     /* #9333EA - same as videographer */
+    --role-cinematographer-bg: 262 84% 95%;
+
+    --role-editor: 37 95% 55%;               /* #D97706 converted to HSL */
+    --role-editor-bg: 37 95% 95%;
+
+    --role-assistant: 220 22% 40%;           /* #4B5563 converted to HSL */
+    --role-assistant-bg: 220 22% 95%;
+
+    --role-drone-operator: 180 84% 35%;      /* #0D9488 converted to HSL */
+    --role-drone-operator-bg: 180 84% 95%;
+
+    --role-drone-pilot: 180 84% 35%;         /* #0D9488 - same as drone operator */
+    --role-drone-pilot-bg: 180 84% 95%;
+
+    --role-other: 220 15% 45%;               /* #6B7280 converted to HSL */
+    --role-other-bg: 220 15% 95%;
+
+    
+    /* Sidebar colors for professional look */
+    --sidebar-background: 37 25% 97%;
+    --sidebar-foreground: 220 13% 18%;
+    --sidebar-primary: 37 28% 65%;
+    --sidebar-primary-foreground: 44 35% 15%;
+    --sidebar-accent: 37 20% 90%;
+    --sidebar-accent-foreground: 220 13% 18%;
+    --sidebar-border: 37 20% 82%;
+    --sidebar-ring: 37 28% 65%;
+    
+    /* Event type colors - high contrast professional */
+    --wedding-color: 340 85% 35%;
+    --wedding-bg: 340 60% 92%;
+    --wedding-border: 340 70% 45%;
+    --pre-wedding-color: 270 85% 40%;
+    --pre-wedding-bg: 270 60% 92%;
+    --pre-wedding-border: 270 70% 50%;
+    --ring-ceremony-color: 200 85% 35%;
+    --ring-ceremony-bg: 200 60% 92%;
+    --ring-ceremony-border: 200 70% 45%;
+    --maternity-color: 45 90% 40%;
+    --maternity-bg: 45 60% 92%;
+    --maternity-border: 45 80% 50%;
+    --others-color: 150 85% 35%;
+    --others-bg: 150 60% 92%;
+    --others-border: 150 70% 45%;
+    
+    /* Advanced color system for studio features */
+    --gradient-primary: linear-gradient(135deg, hsl(37, 28%, 65%), hsl(37, 35%, 72%));
+    --gradient-accent: linear-gradient(135deg, hsl(37, 25%, 90%), hsl(44, 35%, 95%));
+    --shadow-soft: 0 2px 8px -2px hsl(37, 28%, 65%, 0.1);
+    --shadow-medium: 0 4px 16px -4px hsl(37, 28%, 65%, 0.15);
+    --shadow-strong: 0 8px 32px -8px hsl(37, 28%, 65%, 0.2);
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-lexend;
+  }
+
+  /* Ensure Lexend font is applied to all forms and inputs */
+  input, textarea, select, button, .font-inherit {
+    font-family: 'Lexend', 'ui-sans-serif', 'system-ui', sans-serif !important;
+    text-align: left;
+  }
+
+  /* Apply Lexend to all text elements with left alignment */
+  * {
+    font-family: 'Lexend', 'ui-sans-serif', 'system-ui', sans-serif;
+  }
+
+  /* Ensure placeholders are left-aligned */
+  input::placeholder, textarea::placeholder {
+    text-align: left;
+  }
+
+  /* Simple Navigation Button Effects */
+  .nav-button-3d {
+    @apply relative font-medium transition-all duration-200 ease-in-out;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid hsl(var(--primary) / 0.8);
+    box-shadow: 0 2px 4px 0 hsl(var(--primary) / 0.15);
+  }
+
+  .nav-button-3d:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 4px 8px 0 hsl(var(--primary) / 0.2);
+  }
+
+  .nav-button-3d-inactive {
+    @apply relative font-medium transition-all duration-200 ease-in-out;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    border: 1px solid hsl(var(--border) / 0.8);
+    box-shadow: 0 2px 4px 0 hsl(var(--border) / 0.1);
+  }
+
+  .nav-button-3d-inactive:hover {
+    filter: brightness(1.02);
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    box-shadow: 0 4px 8px 0 hsl(var(--border) / 0.15);
+  }
+
+  /* Simple action button effects */
+  .action-button-flat {
+    @apply relative font-medium transition-all duration-200 ease-in-out;
+  }
+
+  /* Custom text selection styling using primary theme colors */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--primary-foreground));
+  }
+
+  ::-moz-selection {
+    background-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--primary-foreground));
+  }
+
+}
