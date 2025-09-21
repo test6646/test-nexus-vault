@@ -59,37 +59,21 @@ interface PaymentNotificationData {
 }
 
 const formatWhatsAppMessage = async (data: PaymentNotificationData): Promise<string> => {
-  // Get notification template settings from database
-  const { data: sessionData } = await supabase
-    .from('wa_sessions')
-    .select('firm_name, firm_tagline, contact_info, footer_signature, notification_templates')
-    .eq('firm_id', data.firmId)
-    .single();
-
-  // Fetch firm fallback data
+  // Get firm data - using only existing fields
   const { data: firm } = await supabase
     .from('firms')
-    .select('name, tagline, contact_phone, contact_email, header_left_content, footer_content')
+    .select('name, tagline, contact_phone, contact_email')
     .eq('id', data.firmId)
     .maybeSingle();
 
-  const firmName = sessionData?.firm_name || firm?.name || 'Studio';
-  const firmTagline = sessionData?.firm_tagline || firm?.tagline || '';
-  const contactInfo = sessionData?.contact_info || (
-    firm?.contact_phone && firm?.contact_email
-      ? `Contact: ${firm.contact_phone}\nEmail: ${firm.contact_email}`
-      : firm?.header_left_content || ''
-  );
-  const footerSignature = sessionData?.footer_signature || firmTagline || '';
+  const firmName = firm?.name || 'Studio';
+  const firmTagline = firm?.tagline || '';
+  const contactInfo = [];
+  if (firm?.contact_phone) contactInfo.push(`Contact: ${firm.contact_phone}`);
+  if (firm?.contact_email) contactInfo.push(`Email: ${firm.contact_email}`);
 
   // Handle event cancellation notification
   if (data.notificationType === 'event_cancellation') {
-    const template = sessionData?.notification_templates?.event_cancellation || {
-      title: 'EVENT CANCELLED',
-      greeting: 'Dear *{clientName}*,',
-      content: 'We wish to inform you that your following event has been cancelled at your request:'
-    };
-
     const eventDate = data.eventDate ? new Date(data.eventDate) : new Date();
     const dateFormatted = eventDate.toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -97,11 +81,11 @@ const formatWhatsAppMessage = async (data: PaymentNotificationData): Promise<str
       year: 'numeric'
     });
 
-    return `*${template.title}*
+    return `*EVENT CANCELLED*
 
-${template.greeting.replace('{clientName}', data.clientName)}
+Dear *${data.clientName}*,
 
-${template.content}
+We wish to inform you that your following event has been cancelled at your request:
 
 *Event:* ${data.eventName}
 *Date:* ${dateFormatted}
@@ -115,25 +99,18 @@ Our team will be in touch shortly to assist you with:
 We appreciate your understanding and remain available for any support you may need. We look forward to serving you again in the future.
 
 Thank you for choosing *${firmName}*
-${firmTagline}
-${contactInfo}
-${footerSignature}`;
+${firmTagline ? `_${firmTagline}_` : ''}
+${contactInfo.join('\n')}`;
   }
 
   // Regular payment notification
-  const template = sessionData?.notification_templates?.payment_received || {
-    title: 'PAYMENT RECEIVED',
-    greeting: 'Dear *{clientName}*,',
-    content: 'We have successfully received your payment:'
-  };
-
   const isFullyPaid = data.remainingBalance === 0;
 
-  return `*${template.title}*
+  return `*PAYMENT RECEIVED*
 
-${template.greeting.replace('{clientName}', data.clientName)}
+Dear *${data.clientName}*,
 
-${template.content}
+We have successfully received your payment:
 
 *Event:* ${data.eventName}
 *Amount Paid:* ₹${data.amountPaid.toLocaleString()}
@@ -141,9 +118,8 @@ ${template.content}
 *Remaining Balance:* ${isFullyPaid ? 'Fully Paid' : `₹${data.remainingBalance.toLocaleString()}`}
 
 Thank you for choosing *${firmName}*
-${firmTagline}
-${contactInfo}
-${footerSignature}`;
+${firmTagline ? `_${firmTagline}_` : ''}
+${contactInfo.join('\n')}`;
 };
 
 const handler = async (req: Request): Promise<Response> => {

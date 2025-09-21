@@ -68,50 +68,28 @@ const formatEventDateRange = (eventDate: string, totalDays: number = 1, eventEnd
 const formatEventConfirmationMessage = async (data: EventConfirmationData): Promise<string> => {
   const dateFormatted = formatEventDateRange(data.eventDate, data.totalDays, data.eventEndDate);
 
-  // Get notification template settings from database
-  const { data: sessionData } = await supabase
-    .from('wa_sessions')
-    .select('firm_name, firm_tagline, contact_info, footer_signature, notification_templates')
-    .eq('firm_id', data.firmId)
-    .single();
-
-  // Fetch firm fallback data
+  // Get firm data - using only existing fields
   const { data: firm } = await supabase
     .from('firms')
-    .select('name, tagline, contact_phone, contact_email, header_left_content, footer_content')
+    .select('name, tagline, contact_phone, contact_email')
     .eq('id', data.firmId)
     .maybeSingle();
 
-  const firmName = sessionData?.firm_name || firm?.name || 'Studio';
-  const firmTagline = sessionData?.firm_tagline || firm?.tagline || '';
-  const contactInfo = sessionData?.contact_info || (
-    firm?.contact_phone && firm?.contact_email
-      ? `Contact: ${firm.contact_phone}\nEmail: ${firm.contact_email}`
-      : firm?.header_left_content || ''
-  );
-  const footerSignature = sessionData?.footer_signature || firmTagline || '';
+  const firmName = firm?.name || 'Studio';
+  const firmTagline = firm?.tagline || '';
+  const contactInfo = [];
+  if (firm?.contact_phone) contactInfo.push(`Contact: ${firm.contact_phone}`);
+  if (firm?.contact_email) contactInfo.push(`Email: ${firm.contact_email}`);
   
-  // Use different template based on whether it's an update or confirmation
-  const templateKey = data.isUpdate ? 'event_update' : 'event_confirmation';
-  const defaultTemplate = data.isUpdate 
-    ? {
-        title: 'EVENT UPDATED',
-        greeting: 'Dear *{clientName}*,',
-        content: 'Your event details have been updated:'
-      }
-    : {
-        title: 'EVENT CONFIRMED',
-        greeting: 'Dear *{clientName}*,',
-        content: 'Your event has been successfully confirmed:'
-      };
-  
-  const template = sessionData?.notification_templates?.[templateKey] || defaultTemplate;
+  // Clean message format
+  const title = data.isUpdate ? 'EVENT UPDATED' : 'EVENT CONFIRMED';
+  const content = data.isUpdate ? 'Your event details have been updated:' : 'Your event has been successfully confirmed:';
 
-  let messageContent = `*${template.title}*
+  let messageContent = `*${title}*
 
-${template.greeting.replace('{clientName}', data.clientName)}
+Dear *${data.clientName}*,
 
-${template.content}
+${content}
 
 *Event:* ${data.eventName}
 *Date:* ${dateFormatted}
@@ -130,9 +108,8 @@ ${template.content}
   messageContent += `
 
 Thank you for choosing *${firmName}*
-_${firmTagline}_
-${contactInfo}
-${footerSignature}`;
+${firmTagline ? `_${firmTagline}_` : ''}
+${contactInfo.join('\n')}`;
 
   return messageContent;
 };
