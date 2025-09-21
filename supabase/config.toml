@@ -1,0 +1,61 @@
+project_id = "tovnbcputrcfznsnccef"
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp-reset]
+verify_jwt = false
+
+[functions.create-firm-with-sheets]
+verify_jwt = false
+
+[functions.create-firm-simple]
+verify_jwt = false
+
+[functions.delete-event-from-calendar]
+verify_jwt = false
+
+[functions.delete-item-from-google]
+verify_jwt = false
+
+[functions.get-backend-url]
+verify_jwt = false
+
+[functions.send-event-confirmation]
+verify_jwt = false
+
+[functions.send-event-deletion-notifications]
+verify_jwt = false
+
+[functions.send-payment-notification]
+verify_jwt = false
+
+[functions.send-staff-notification]
+verify_jwt = false
+
+[functions.send-whatsapp-document]
+verify_jwt = false
+
+[functions.sync-event-to-calendar]
+verify_jwt = false
+
+[functions.sync-salary-payments-to-google]
+verify_jwt = false
+
+[functions.sync-single-item-to-google]
+verify_jwt = false
+
+[functions.sync-staff-to-google-direct]
+verify_jwt = false
+
+[functions.update-event-editing-status]
+verify_jwt = false
+
+[functions.verify-access-pin]
+verify_jwt = false
+
+[functions.verify-admin-pin]
+verify_jwt = false
+
+[functions.generate-whatsapp-qr]
+verify_jwt = false
