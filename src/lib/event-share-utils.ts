@@ -40,6 +40,17 @@ export const shareEventDetails = async (event: Event, firmData?: any, shareType:
       // Import WhatsApp share utility
       const { shareToClientWhatsApp } = await import('@/lib/whatsapp-share-utils');
       
+      // Use existing firmData or fetch if not provided
+      let finalFirmData = firmData;
+      if (!finalFirmData) {
+        const { data: fetchedFirmData } = await supabase
+          .from('firms')
+          .select('name, tagline, contact_phone, contact_email')
+          .eq('id', event.firm_id)
+          .single();
+        finalFirmData = fetchedFirmData || undefined;
+      }
+      
       return await shareToClientWhatsApp({
         clientName: event.client.name,
         clientPhone: event.client.phone,
@@ -47,7 +58,7 @@ export const shareEventDetails = async (event: Event, firmData?: any, shareType:
         documentType: 'invoice',
         file: file,
         firmId: event.firm_id,
-        firmData
+        firmData: finalFirmData
       });
     } else {
       // Custom share - use existing share functionality

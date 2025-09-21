@@ -108,7 +108,7 @@ interface NotificationSettings {
 const UnifiedNotificationTemplates = () => {
   const { currentFirmId } = useAuth();
   const { toast } = useToast();
-  const { firmName, tagline, getContactInfo, signature } = useDynamicBranding();
+  const { firmName, tagline, getContactInfo } = useDynamicBranding();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [previewType, setPreviewType] = useState<keyof NotificationSettings['notification_templates']>('event_assignment');
@@ -203,7 +203,7 @@ const UnifiedNotificationTemplates = () => {
     firm_name: firmName,
     firm_tagline: tagline,
     contact_info: getContactInfo(),
-    footer_signature: signature,
+    footer_signature: firmName,
     notification_templates: getDefaultTemplates()
   });
 
@@ -220,9 +220,9 @@ const UnifiedNotificationTemplates = () => {
       firm_name: firmName,
       firm_tagline: tagline,
       contact_info: getContactInfo(),
-      footer_signature: signature
+      footer_signature: firmName
     }));
-  }, [firmName, tagline, getContactInfo, signature]);
+  }, [firmName, tagline, getContactInfo]);
 
   const loadSettings = async () => {
     if (!currentFirmId) return;
@@ -240,7 +240,7 @@ const UnifiedNotificationTemplates = () => {
           firm_name: data.firm_name || firmName,
           firm_tagline: data.firm_tagline || tagline,
           contact_info: data.contact_info || getContactInfo(),
-          footer_signature: data.footer_signature || signature,
+          footer_signature: data.footer_signature || firmName,
           notification_templates: (data.notification_templates && typeof data.notification_templates === 'object' && !Array.isArray(data.notification_templates)) 
             ? { ...getDefaultTemplates(), ...data.notification_templates as any }
             : getDefaultTemplates()
@@ -289,7 +289,7 @@ const UnifiedNotificationTemplates = () => {
       firm_name: firmName,
       firm_tagline: tagline,
       contact_info: getContactInfo(),
-      footer_signature: signature,
+      footer_signature: firmName,
       notification_templates: getDefaultTemplates()
     });
   };

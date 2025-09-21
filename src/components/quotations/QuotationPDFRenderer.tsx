@@ -527,13 +527,21 @@ export const shareQuotationDetails = async (quotation: any, shareType: 'direct' 
       // Import WhatsApp share utility
       const { shareToClientWhatsApp } = await import('@/lib/whatsapp-share-utils');
       
+      // Fetch firm data for proper messaging
+      const { data: firmData } = await supabase
+        .from('firms')
+        .select('name, tagline, contact_phone, contact_email')
+        .eq('id', quotation.firm_id)
+        .single();
+      
       return await shareToClientWhatsApp({
         clientName: quotation.client.name,
         clientPhone: quotation.client.phone,
         eventType: quotation.event_type,
         documentType: 'quotation',
         file: file,
-        firmId: quotation.firm_id
+        firmId: quotation.firm_id,
+        firmData: firmData || undefined
       });
     } else {
       // Custom share - use existing share functionality  

@@ -8,7 +8,6 @@ import { QrCode01Icon } from 'hugeicons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { EmptyState } from '@/components/ui/empty-state';
-import { PageSkeleton } from '@/components/ui/skeleton';
 import WhatsAppBranding from '@/components/whatsapp/WhatsAppBranding';
 import UnifiedNotificationTemplates from '@/components/whatsapp/UnifiedNotificationTemplates';
 
@@ -26,10 +25,9 @@ const WhatsAppIntegration = () => {
   const hasCheckedStatus = useRef<string | boolean>(false);
   const { toast } = useToast();
 
-  // Reset state when firm changes - CRITICAL: Reset everything properly
+  // Reset state when firm changes
   useEffect(() => {
     if (currentFirmId) {
-      // Reset all state for new firm - CRITICAL: Reset ref to allow initialization
       hasCheckedStatus.current = false;
       setStage('initial');
       setQrCode('');
@@ -40,7 +38,7 @@ const WhatsAppIntegration = () => {
     }
   }, [currentFirmId]);
 
-  // Get backend URL and check initial status - FIRM-SPECIFIC
+  // Get backend URL and check initial status
   useEffect(() => {
     const initializeWhatsApp = async () => {
       if (!currentFirmId) {
@@ -48,7 +46,6 @@ const WhatsAppIntegration = () => {
         return;
       }
       
-      // CRITICAL: Don't use ref to prevent re-runs - each firm needs fresh check
       setInitialLoading(true);
       
       try {
@@ -59,7 +56,6 @@ const WhatsAppIntegration = () => {
           backendUrlData = data;
         } catch (backendError) {
           console.warn('Backend URL fetch failed, using fallback:', backendError);
-          // Continue with empty backend URL - will show error in UI
           setBackendUrl('');
           setStage('initial');
           setInitialLoading(false);
@@ -75,7 +71,7 @@ const WhatsAppIntegration = () => {
         }
         setBackendUrl(backendUrlData.url);
         
-        // CRITICAL: First check database for existing session for THIS SPECIFIC FIRM
+        // Check database for existing session
         const { data: sessionData, error: sessionError } = await supabase
           .from('wa_sessions')
           .select('status, session_data, updated_at')
@@ -83,30 +79,20 @@ const WhatsAppIntegration = () => {
           .eq('firm_id', currentFirmId)
           .maybeSingle();
 
-        console.log('Session data from database:', sessionData);
-
-        // If NO session exists in database for this firm, show as disconnected
         if (!sessionData || sessionError) {
-          console.log('No session found in database or error:', sessionError);
           setStage('initial');
           setInitialLoading(false);
           return;
         }
 
-        // Check database status directly - FIXED: Use status column not session_data
-        console.log('Database status:', sessionData.status);
         if (sessionData.status === 'connected') {
-          console.log('Database shows connected status, setting stage to connected');
-          // Session shows connected in database - trust database status
           setStage('connected');
         } else {
-          console.log('Database status not connected, checking backend...');
-          // Session exists but doesn't show connected status, check backend fresh
           try {
             const response = await fetch(`${backendUrlData.url}/api/whatsapp/status?firmId=${currentFirmId}`, {
               method: 'GET',
               headers: { 'Content-Type': 'application/json' },
-              signal: AbortSignal.timeout(5000) // 5s timeout
+              signal: AbortSignal.timeout(5000)
             });
             
             if (response.ok) {
@@ -139,7 +125,6 @@ const WhatsAppIntegration = () => {
       }
     };
     
-    // Add a small delay to prevent rapid re-initialization
     const timeoutId = setTimeout(initializeWhatsApp, 100);
     return () => clearTimeout(timeoutId);
   }, [currentFirmId, toast]);
@@ -212,66 +197,60 @@ const WhatsAppIntegration = () => {
       return;
     }
 
-setIsLoading(true);
-try {
-  console.log(`[WhatsApp] Generating QR code for firm: ${currentFirmId}`);
-
-  // Trigger backend to start/restart initialization (returns immediately)
-  const generateResponse = await fetch(`${backendUrl}/api/whatsapp/generate-qr`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ firmId: currentFirmId }),
-  });
-
-  if (!generateResponse.ok) {
-    const errorText = await generateResponse.text().catch(() => 'Unknown error');
-    throw new Error(`Backend generate-qr failed: ${generateResponse.status} - ${errorText}`);
-  }
-
-  const generateData = await generateResponse.json();
-  if (!generateData.success) {
-    throw new Error(generateData.message || 'Failed to initiate QR generation');
-  }
-
-  // Poll for QR availability without a fixed overall timeout
-  // The QR endpoint will return 404 until Baileys emits a QR; we poll every 1s
-  while (true) {
+    setIsLoading(true);
     try {
-      const qrResponse = await fetch(`${backendUrl}/api/whatsapp/qr?firmId=${currentFirmId}`, {
-        method: 'GET',
+      const generateResponse = await fetch(`${backendUrl}/api/whatsapp/generate-qr`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firmId: currentFirmId }),
       });
 
-      if (qrResponse.ok) {
-        const qrData = await qrResponse.json();
-        if (qrData.success && qrData.qrCode && qrData.firmId === currentFirmId) {
-          setQrCode(qrData.qrCode);
-          setStage('qr-generated');
-          toast({
-            title: 'QR Code Generated',
-            description: `Scan with your WhatsApp to connect for firm ${qrData.firmId}`,
-          });
-          break;
-        }
+      if (!generateResponse.ok) {
+        const errorText = await generateResponse.text().catch(() => 'Unknown error');
+        throw new Error(`Backend generate-qr failed: ${generateResponse.status} - ${errorText}`);
       }
-    } catch (pollErr) {
-      // Non-fatal; just continue polling
-      console.warn('[WhatsApp] QR poll failed, retrying...', pollErr);
-    }
 
-    // Small wait before the next poll (no overall manual timeout)
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-} catch (error: unknown) {
-  console.error('QR generation error:', error);
-  toast({
-    title: 'Error',
-    description: error instanceof Error ? error.message : 'Failed to generate QR code. Make sure your backend is running and accessible',
-    variant: 'destructive',
-  });
-} finally {
-  setIsLoading(false);
-}
+      const generateData = await generateResponse.json();
+      if (!generateData.success) {
+        throw new Error(generateData.message || 'Failed to initiate QR generation');
+      }
+
+      // Poll for QR availability
+      while (true) {
+        try {
+          const qrResponse = await fetch(`${backendUrl}/api/whatsapp/qr?firmId=${currentFirmId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          if (qrResponse.ok) {
+            const qrData = await qrResponse.json();
+            if (qrData.success && qrData.qrCode && qrData.firmId === currentFirmId) {
+              setQrCode(qrData.qrCode);
+              setStage('qr-generated');
+              toast({
+                title: 'QR Code Generated',
+                description: `Scan with your WhatsApp to connect for firm ${qrData.firmId}`,
+              });
+              break;
+            }
+          }
+        } catch (pollErr) {
+          console.warn('[WhatsApp] QR poll failed, retrying...', pollErr);
+        }
+
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    } catch (error: unknown) {
+      console.error('QR generation error:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to generate QR code. Make sure your backend is running and accessible',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const checkConnection = async () => {
@@ -286,7 +265,6 @@ try {
 
     setIsCheckingStatus(true);
     try {
-      // Checking connection for firm
       const response = await fetch(`${backendUrl}/api/whatsapp/status?firmId=${currentFirmId}`, {
         method: 'GET',
         headers: {
@@ -295,14 +273,12 @@ try {
       });
       if (response.ok) {
         const data = await response.json();
-        // Connection status checked
         if (data.isConnected && data.firmId === currentFirmId) {
-          // Immediately store the session data in Supabase
           try {
             // Get firm data to populate session info
             const { data: firmData } = await supabase
               .from('firms')
-              .select('name, description, tagline, contact_phone, contact_email, header_left_content, footer_content')
+              .select('name, tagline, contact_phone, contact_email')
               .eq('id', currentFirmId)
               .single();
 
@@ -315,17 +291,15 @@ try {
                 status: 'connected',
                 reconnect_enabled: false,
                 firm_name: firmData?.name || 'Unknown Firm',
-                firm_tagline: firmData?.tagline || firmData?.description || '',
+                firm_tagline: firmData?.tagline || '',
                 contact_info: firmData?.contact_phone && firmData?.contact_email 
                   ? `Contact: ${firmData.contact_phone}\nEmail: ${firmData.contact_email}`
-                  : firmData?.header_left_content || '',
-                footer_signature: firmData?.footer_content || ''
+                  : '',
+                footer_signature: firmData?.name || 'Studio'
               });
             
             if (upsertError) {
               console.error('Error storing session data:', upsertError);
-            } else {
-              console.log('Session data stored successfully for firm:', currentFirmId);
             }
           } catch (dbError) {
             console.error('Database error occurred:', dbError);
@@ -369,7 +343,6 @@ try {
 
     setIsSendingTest(true);
     try {
-      // Sending test message
       const response = await fetch(`${backendUrl}/api/whatsapp/send-test-message`, {
         method: 'POST',
         headers: {
@@ -426,9 +399,9 @@ try {
   const isAnyLoading = initialLoading || isLoading || isCheckingStatus || isSendingTest;
 
   return (
-    <div className="space-y-4">
-      {/* Status Badge */}
-      <div className="flex justify-center mb-6">
+    <div className="space-y-6">
+      {/* Connection Status */}
+      <div className="flex justify-center">
         <div className={`flex items-center space-x-2 px-4 py-2 rounded-full border ${
           stage === 'connected' 
             ? 'bg-primary/10 border-primary/20 text-primary' 
@@ -445,59 +418,65 @@ try {
         </div>
       </div>
 
+      {/* Tab Navigation */}
       <Tabs defaultValue="connection" className="w-full">
         <div className="flex justify-center mb-6">
-          <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger 
               value="connection" 
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 text-sm"
             >
-              <Link className="mr-2 h-4 w-4" />
+              <Link className="h-4 w-4" />
               Connection
             </TabsTrigger>
             <TabsTrigger 
               value="branding" 
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 text-sm"
             >
-              <BrushIcon className="mr-2 h-4 w-4" />
+              <BrushIcon className="h-4 w-4" />
               Branding
             </TabsTrigger>
             <TabsTrigger 
               value="templates" 
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 text-sm"
             >
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText className="h-4 w-4" />
               Templates
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="connection" className="space-y-4">
-          {/* Stage-wise Connection Flow */}
-          <div className="max-w-2xl mx-auto space-y-4">
-            {/* Stage 1: Initial - Generate QR */}
-            {stage === 'initial' && (
-              <Card className="border-2 border-dashed border-border hover:border-primary/50 transition-colors">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full mx-auto flex items-center justify-center mb-4">
-                    <QrCode01Icon className="h-8 w-8 text-primary" />
+        {/* Connection Tab */}
+        <TabsContent value="connection" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link className="h-5 w-5" />
+                WhatsApp Connection
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {stage === 'initial' && (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                    <MessageCircle className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <CardTitle className="text-xl">Connect WhatsApp</CardTitle>
-                  <p className="text-muted-foreground">
-                    Generate QR code to connect WhatsApp
-                  </p>
-                </CardHeader>
-                <CardContent className="text-center space-y-4 pt-0">
+                  <div>
+                    <h3 className="text-lg font-medium">Connect WhatsApp</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Generate a QR code to link your WhatsApp account
+                    </p>
+                  </div>
                   <Button 
                     onClick={generateQR} 
                     disabled={isAnyLoading}
                     size="lg"
-                    className="w-full"
+                    className="w-full max-w-xs"
                   >
-                   {isLoading ? (
+                    {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Connecting to WhatsApp...
+                        Generating QR...
                       </>
                     ) : (
                       <>
@@ -505,141 +484,94 @@ try {
                         Generate QR Code
                       </>
                     )}
-                 </Button>
-               </CardContent>
-              </Card>
-            )}
+                  </Button>
+                </div>
+              )}
 
-            {/* Stage 2: QR Generated - Scan and Check */}
-            {stage === 'qr-generated' && (
-              <Card className="border-2 border-primary/20">
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-xl">Scan QR Code</CardTitle>
-                  <p className="text-muted-foreground">
-                    Use WhatsApp app to scan the code
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-0">
-                  <div className="text-center">
-                    <div className="bg-white p-4 rounded-xl border-2 border-dashed border-border inline-block">
-                      <img 
-                        src={qrCode} 
-                        alt="WhatsApp QR Code" 
-                        className="w-48 h-48"
-                      />
-                    </div>
-                    <div className="mt-4 space-y-1">
-                      <p className="text-sm font-medium">How to scan:</p>
-                      <p className="text-xs text-muted-foreground">
-                        WhatsApp → Settings → Linked Devices → Link a Device
-                      </p>
-                    </div>
+              {stage === 'qr-generated' && qrCode && (
+                <div className="text-center space-y-4">
+                  <div className="bg-white p-4 rounded-lg border inline-block">
+                    <img src={qrCode} alt="WhatsApp QR Code" className="w-48 h-48" />
                   </div>
-                  
-                  <Button 
-                    onClick={checkConnection} 
-                    disabled={isAnyLoading}
-                    size="lg"
-                    className="w-full"
-                  >
-                   {isCheckingStatus ? (
-                     <>
-                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                       Checking Connection...
-                     </>
-                   ) : (
-                     <>
-                       <RefreshCw className="mr-2 h-4 w-4" />
-                       I've Linked My WhatsApp
-                     </>
-                   )}
-                 </Button>
-               </CardContent>
-              </Card>
-            )}
-
-            {/* Stage 3: Connected - Test and Features */}
-            {stage === 'connected' && (
-              <div className="space-y-6">
-                <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-                  <CardHeader className="text-center pb-4">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full mx-auto flex items-center justify-center mb-4">
-                      <CheckCircle className="h-8 w-8 text-primary" />
-                    </div>
-                    <CardTitle className="text-primary text-xl">WhatsApp Connected!</CardTitle>
-                    <p className="text-muted-foreground">
-                      WhatsApp connected successfully
+                  <div>
+                    <h3 className="text-lg font-medium">Scan QR Code</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Open WhatsApp on your phone and scan this code
                     </p>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-0">
-                    <div className="text-center p-4 bg-muted/30 rounded-lg border">
-                      <p className="text-xs text-muted-foreground mb-1">Test number</p>
-                      <p className="font-mono text-sm font-medium">+91 91064 03233</p>
-                    </div>
-                    
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <Button 
+                      onClick={checkConnection} 
+                      disabled={isAnyLoading}
+                      variant="outline"
+                    >
+                      {isCheckingStatus ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Check Status
+                        </>
+                      )}
+                    </Button>
+                    <Button onClick={generateQR} disabled={isAnyLoading}>
+                      <QrCode01Icon className="mr-2 h-4 w-4" />
+                      New QR
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {stage === 'connected' && (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-primary">Connected!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your WhatsApp is successfully connected
+                    </p>
+                  </div>
+                  <div className="flex gap-2 justify-center">
                     <Button 
                       onClick={sendTestMessage} 
                       disabled={isAnyLoading}
-                      size="lg"
-                      className="w-full"
-                      variant="default"
+                      variant="outline"
                     >
-                     {isSendingTest ? (
-                       <>
-                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                         Sending Test Message...
-                       </>
-                     ) : (
-                       <>
-                         <Send className="mr-2 h-4 w-4" />
-                         Send Test Message
-                       </>
-                     )}
-                   </Button>
-                 </CardContent>
-                </Card>
-
-                {/* Auto-notifications Status */}
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center space-y-4">
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                        <span className="text-sm font-medium text-primary">
-                          Auto-notifications enabled
-                        </span>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <Zap className="h-4 w-4 text-primary mx-auto mb-1" />
-                          <p className="text-xs font-medium">Payments</p>
-                          <p className="text-xs text-muted-foreground">Auto receipts</p>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <MessageCircle className="h-4 w-4 text-primary mx-auto mb-1" />
-                          <p className="text-xs font-medium">Events</p>
-                          <p className="text-xs text-muted-foreground">Updates</p>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <CheckCircle className="h-4 w-4 text-primary mx-auto mb-1" />
-                          <p className="text-xs font-medium">Tasks</p>
-                          <p className="text-xs text-muted-foreground">Reminders</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </div>
+                      {isSendingTest ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Send Test
+                        </>
+                      )}
+                    </Button>
+                    <Button onClick={generateQR} disabled={isAnyLoading}>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Reconnect
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="branding" className="space-y-6">
+        {/* Branding Tab */}
+        <TabsContent value="branding">
           <WhatsAppBranding />
         </TabsContent>
 
-        <TabsContent value="templates" className="space-y-6">
+        {/* Templates Tab */}
+        <TabsContent value="templates">
           <UnifiedNotificationTemplates />
         </TabsContent>
       </Tabs>

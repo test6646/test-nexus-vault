@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { BUSINESS_DEFAULTS } from '@/config/business-defaults';
 
 interface WhatsAppShareData {
   clientName: string;
@@ -10,38 +9,55 @@ interface WhatsAppShareData {
   firmId: string;
   firmData?: {
     name: string;
-    description?: string;
     tagline?: string;
     contact_phone?: string;
     contact_email?: string;
-    header_left_content?: string;
-    footer_content?: string;
   };
 }
 
 export const shareToClientWhatsApp = async (data: WhatsAppShareData) => {
   try {
-    // Format the custom message using dynamic firm data or business defaults
-    const firmName = data.firmData?.name || BUSINESS_DEFAULTS.FIRM_NAME;
-    const firmTagline = data.firmData?.tagline || data.firmData?.description || BUSINESS_DEFAULTS.TAGLINE;
-    const contactInfo = data.firmData?.contact_phone && data.firmData?.contact_email
-      ? `Contact: ${data.firmData.contact_phone}\nEmail: ${data.firmData.contact_email}`
-      : data.firmData?.header_left_content || `Contact: ${BUSINESS_DEFAULTS.CONTACT_PHONE}\nEmail: ${BUSINESS_DEFAULTS.CONTACT_EMAIL}`;
-    
-    // Create signature with actual firm name
-    const signature = firmName !== BUSINESS_DEFAULTS.FIRM_NAME 
-      ? `#aJourneyOfLoveBy${firmName.replace(/\s+/g, '')}`
-      : BUSINESS_DEFAULTS.SIGNATURE;
+    // Fetch firm data from database if not provided
+    let firmName = 'Studio';
+    let firmTagline = 'Professional Photography & Videography Services';
+    let contactPhone = '';
+    let contactEmail = '';
+
+    if (data.firmData) {
+      firmName = data.firmData.name || firmName;
+      firmTagline = data.firmData.tagline || firmTagline;
+      contactPhone = data.firmData.contact_phone || '';
+      contactEmail = data.firmData.contact_email || '';
+    } else {
+      // Fetch from database
+      const { data: firmData } = await supabase
+        .from('firms')
+        .select('name, tagline, contact_phone, contact_email')
+        .eq('id', data.firmId)
+        .single();
+      
+      if (firmData) {
+        firmName = firmData.name || firmName;
+        firmTagline = firmData.tagline || firmTagline;
+        contactPhone = firmData.contact_phone || '';
+        contactEmail = firmData.contact_email || '';
+      }
+    }
+
+    // Build contact info only with available data
+    const contactParts = [];
+    if (contactPhone) contactParts.push(`Contact: ${contactPhone}`);
+    if (contactEmail) contactParts.push(`Email: ${contactEmail}`);
+    const contactInfo = contactParts.join('\n');
     
     const message = `Dear ${data.clientName},
 
 Please find your ${data.eventType} event related custom ${data.documentType} here. Thank you!
 
 *${firmName}*
-${contactInfo.replace(/\n/g, '\n')}
+${contactInfo}
 
-${firmTagline}
-${signature}`;
+${firmTagline}`;
 
     // Create the file data for WhatsApp API
     const fileData = {
